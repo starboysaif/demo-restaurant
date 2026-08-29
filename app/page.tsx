@@ -26,10 +26,10 @@ export default function Home() {
         </p>
         <div className="flex justify-center gap-2">
           <Link
-            href="/track"
-            className="bg-brand-red text-white rounded-full px-5 py-2 font-body text-sm font-bold"
+            href="/admin"
+            className="border border-brand-orange text-brand-orange rounded-full px-5 py-2 font-body text-sm font-bold"
           >
-            تتبع طلبك
+            لوحة التحكم (نموذج)
           </Link>
         </div>
       </div>
