@@ -22,7 +22,7 @@ export default function Home() {
           Bite House
         </h1>
         <p className="font-body text-base text-charcoal/70 mb-5">
-          اطلب طلبك المفضل اونلاين في ثواني
+          المنيو والطلب اونلاين
         </p>
         <div className="flex justify-center gap-2">
           <Link
@@ -54,6 +54,9 @@ export default function Home() {
           </Link>
         ))}
       </section>
+      <p className="text-center font-body text-xs text-charcoal/30 mt-8">
+        نموذج توضيحي
+      </p>
     </main>
   );
 }
