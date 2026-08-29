@@ -144,48 +144,4 @@ export default function Checkout() {
       </button>
     </main>
   );
-        }        <div className="space-y-3 mb-8">
-          {cart.map((item) => (
-            <div key={item.id} className="flex justify-between items-center border-b border-brand-orange/20 pb-3">
-              <div>
-                <p className="font-body font-bold">{item.name}</p>
-                <p className="font-body text-sm text-charcoal/60">{item.price} ج.م</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => updateQty(item.id, -1)} className="w-8 h-8 rounded-full bg-brand-orange/10 font-bold">-</button>
-                <span className="font-body font-bold">{item.qty}</span>
-                <button onClick={() => updateQty(item.id, 1)} className="w-8 h-8 rounded-full bg-brand-orange/10 font-bold">+</button>
-              </div>
-            </div>
-          ))}
-          <div className="pt-2 space-y-1">
-            <p className="font-body text-sm text-charcoal/70 flex justify-between"><span>المجموع الفرعي</span><span>{subtotal} ج.م</span></p>
-            {orderType === "delivery" && (
-              <p className="font-body text-sm text-charcoal/70 flex justify-between"><span>رسوم التوصيل</span><span>{deliveryFee} ج.م</span></p>
-            )}
-            <p className="font-display text-xl font-bold flex justify-between"><span>الإجمالي</span><span>{total} ج.م</span></p>
-          </div>
-        </div>
-      )}
-
-      <div className="flex gap-3 mb-5">
-        <button onClick={() => setOrderType("delivery")} className={`flex-1 py-3 rounded-lg font-body font-bold border ${orderType === "delivery" ? "bg-brand-orange text-white border-brand-orange" : "border-brand-orange/30 text-charcoal"}`}>توصيل</button>
-        <button onClick={() => setOrderType("pickup")} className={`flex-1 py-3 rounded-lg font-body font-bold border ${orderType === "pickup" ? "bg-brand-orange text-white border-brand-orange" : "border-brand-orange/30 text-charcoal"}`}>استلام من الفرع</button>
-      </div>
-
-      <div className="space-y-4">
-        <input type="text" placeholder="الاسم" value={name} onChange={(e) => setName(e.target.value)} className="w-full border border-brand-orange/30 rounded-lg px-4 py-3 font-body" />
-        <input type="tel" placeholder="رقم التليفون" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full border border-brand-orange/30 rounded-lg px-4 py-3 font-body" />
-        {orderType === "delivery" && (
-          <input type="text" placeholder="العنوان بالتفصيل" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full border border-brand-orange/30 rounded-lg px-4 py-3 font-body" />
-        )}
-        <p className="font-body text-sm text-charcoal/60">الدفع: كاش عند الاستلام</p>
-        {error && <p className="font-body text-red-600 text-sm">{error}</p>}
-      </div>
-
-      <button onClick={submitOrder} disabled={submitting} className="fixed bottom-0 left-0 right-0 bg-brand-red text-white text-center py-4 font-display font-bold text-lg disabled:opacity-60">
-        {submitting ? "جاري الإرسال..." : "تأكيد الطلب"}
-      </button>
-    </main>
-  );
-        }
+}
