@@ -25,7 +25,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#FFF8EE] pb-14">
+    <main className="min-h-screen bg-[#FFF8EE] pb-28">
       <div
         className="relative h-[65vh] min-h-[400px] flex items-end"
         style={{
