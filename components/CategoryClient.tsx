@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { getExtraItems } from "@/lib/demoMenu";
@@ -14,14 +14,14 @@ type MenuItem = {
   options: MenuOption[];
 };
 
-function addToCart(id: string, name: string, price: number) {
+function commitToCart(id: string, name: string, price: number, qty: number) {
   const saved = localStorage.getItem("bitehouse-cart");
   const cart: any[] = saved ? JSON.parse(saved) : [];
   const existing = cart.find((item) => item.id === id);
   if (existing) {
-    existing.qty += 1;
+    existing.qty += qty;
   } else {
-    cart.push({ id, name, price, qty: 1 });
+    cart.push({ id, name, price, qty });
   }
   localStorage.setItem("bitehouse-cart", JSON.stringify(cart));
   window.dispatchEvent(new Event("cart-updated"));
@@ -30,9 +30,10 @@ function addToCart(id: string, name: string, price: number) {
 export default function CategoryClient({ category }: { category: string }) {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pickerItem, setPickerItem] = useState<MenuItem | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [selectedOption, setSelectedOption] = useState<MenuOption | null>(null);
-  const [justAdded, setJustAdded] = useState<string | null>(null);
+  const [pendingQty, setPendingQty] = useState(0);
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     loadItems();
@@ -74,26 +75,52 @@ export default function CategoryClient({ category }: { category: string }) {
     setLoading(false);
   }
 
-  function openPicker(item: MenuItem) {
-    setPickerItem(item);
-    setSelectedOption(item.options.length === 1 ? item.options[0] : null);
-  }
-
-  function confirmAdd() {
-    if (!pickerItem || !selectedOption) return;
-    const fullName = selectedOption.label ? `${pickerItem.name} - ${selectedOption.label}` : pickerItem.name;
-    addToCart(`${pickerItem.id}-${selectedOption.label}`, fullName, selectedOption.price);
-    setJustAdded(pickerItem.id);
-    setTimeout(() => setJustAdded(null), 1200);
-    setPickerItem(null);
+  function commitPending(item: MenuItem) {
+    if (pendingQty > 0 && selectedOption) {
+      const fullName = selectedOption.label ? `${item.name} - ${selectedOption.label}` : item.name;
+      commitToCart(`${item.id}-${selectedOption.label}`, fullName, selectedOption.price, pendingQty);
+    }
+    setPendingQty(0);
     setSelectedOption(null);
+    if (timerRef.current) clearTimeout(timerRef.current);
   }
 
-  function quickAdd(item: MenuItem) {
-    const option = item.options[0];
-    addToCart(`${item.id}-${option.label}`, item.name, option.price);
-    setJustAdded(item.id);
-    setTimeout(() => setJustAdded(null), 1200);
+  function toggleExpand(item: MenuItem) {
+    if (expandedId === item.id) {
+      commitPending(item);
+      setExpandedId(null);
+    } else {
+      if (expandedId) {
+        const prev = items.find((i) => i.id === expandedId);
+        if (prev) commitPending(prev);
+      }
+      setExpandedId(item.id);
+      setSelectedOption(item.options.length === 1 ? item.options[0] : null);
+      setPendingQty(0);
+    }
+  }
+
+  function startAdd(item: MenuItem) {
+    if (!selectedOption) return;
+    setPendingQty(1);
+    resetTimer(item);
+  }
+
+  function resetTimer(item: MenuItem) {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => commitPending(item), 2500);
+  }
+
+  function changeQty(item: MenuItem, delta: number) {
+    setPendingQty((prev) => {
+      const next = prev + delta;
+      if (next <= 0) {
+        if (timerRef.current) clearTimeout(timerRef.current);
+        return 0;
+      }
+      resetTimer(item);
+      return next;
+    });
   }
 
   return (
@@ -106,9 +133,7 @@ export default function CategoryClient({ category }: { category: string }) {
       }}
     >
       <header className="py-5 px-4 flex items-center gap-3">
-        <Link href="/" className="text-2xl text-brand-red">
-          ←
-        </Link>
+        <Link href="/" className="text-2xl text-brand-red">←</Link>
         <h1 className="font-display text-2xl font-bold text-brand-red">{category}</h1>
       </header>
 
@@ -118,87 +143,76 @@ export default function CategoryClient({ category }: { category: string }) {
       )}
 
       <div className="px-4 mt-2 space-y-4">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="rounded-2xl overflow-hidden flex bg-white shadow-[0_2px_10px_rgba(43,24,16,0.08)] border border-brand-orange/10"
-          >
-            {item.image_url && (
-              <img src={item.image_url} alt={item.name} className="w-24 h-24 object-cover shrink-0" />
-            )}
-            <div className="p-3 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="font-display font-bold text-lg">{item.name}</h3>
-                {item.description && (
-                  <p className="font-body text-sm text-charcoal/70 mt-1">{item.description}</p>
-                )}
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <p className="font-body font-bold text-brand-red">
-                  {item.options.length === 1
-                    ? `${item.options[0].price} ج.م`
-                    : item.options.map((o) => `${o.label}: ${o.price}`).join(" / ")}
-                </p>
-                {item.options.length === 1 ? (
-                  <button
-                    onClick={() => quickAdd(item)}
-                    className="bg-brand-orange text-white font-body font-bold px-4 py-2 rounded-lg shrink-0"
-                  >
-                    {justAdded === item.id ? "تمت الإضافة" : "أضف"}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => openPicker(item)}
-                    className="bg-brand-orange text-white font-body font-bold px-4 py-2 rounded-lg shrink-0"
-                  >
-                    اختر
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+        {items.map((item) => {
+          const isOpen = expandedId === item.id;
+          return (
+            <div key={item.id} className="rounded-2xl overflow-hidden shadow-[0_4px_16px_rgba(43,24,16,0.12)]">
+              <button
+                onClick={() => toggleExpand(item)}
+                className="relative w-full h-40 block"
+                style={{
+                  backgroundImage: item.image_url
+                    ? `linear-gradient(180deg, rgba(20,10,5,0) 40%, rgba(20,10,5,0.75) 100%), url('${item.image_url}')`
+                    : "none",
+                  backgroundColor: item.image_url ? undefined : "#F1671F1A",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
+                <div className="absolute bottom-0 right-0 left-0 p-3 flex items-center justify-between">
+                  <span className="font-display font-bold text-lg text-white drop-shadow">{item.name}</span>
+                  <span className="text-white/90 text-xl">{isOpen ? "▲" : "▼"}</span>
+                </div>
+              </button>
 
-      {pickerItem && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-end z-50"
-          onClick={() => setPickerItem(null)}
-        >
-          <div className="bg-white w-full rounded-t-2xl p-5" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-display font-bold text-xl mb-4">{pickerItem.name}</h3>
-            <div className="space-y-3 mb-4">
-              {pickerItem.options.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setSelectedOption(option)}
-                  className={`w-full flex justify-between items-center rounded-lg px-4 py-3 border-2 ${
-                    selectedOption?.id === option.id
-                      ? "border-brand-red bg-brand-red/5"
-                      : "border-brand-orange/20"
-                  }`}
-                >
-                  <span className="font-body font-bold">{option.label}</span>
-                  <span className="font-body font-bold text-brand-red">{option.price} ج.م</span>
-                </button>
-              ))}
+              {isOpen && (
+                <div className="bg-white p-4">
+                  {item.description && (
+                    <p className="font-body text-sm text-charcoal/70 mb-3">{item.description}</p>
+                  )}
+
+                  {item.options.length > 1 && (
+                    <div className="space-y-2 mb-3">
+                      {item.options.map((option) => (
+                        <button
+                          key={option.id}
+                          onClick={() => setSelectedOption(option)}
+                          className={`w-full flex justify-between items-center rounded-lg px-4 py-2.5 border-2 ${
+                            selectedOption?.id === option.id ? "border-brand-red bg-brand-red/5" : "border-brand-orange/20"
+                          }`}
+                        >
+                          <span className="font-body font-bold text-sm">{option.label}</span>
+                          <span className="font-body font-bold text-sm text-brand-red">{option.price} ج.م</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {item.options.length === 1 && (
+                    <p className="font-body font-bold text-brand-red mb-3">{item.options[0].price} ج.م</p>
+                  )}
+
+                  {pendingQty === 0 ? (
+                    <button
+                      onClick={() => startAdd(item)}
+                      disabled={!selectedOption}
+                      className="w-full bg-brand-orange text-white font-body font-bold py-2.5 rounded-lg disabled:opacity-40"
+                    >
+                      أضف
+                    </button>
+                  ) : (
+                    <div className="flex items-center justify-center gap-4 bg-brand-orange/10 rounded-lg py-2">
+                      <button onClick={() => changeQty(item, -1)} className="w-9 h-9 rounded-full bg-white font-bold shadow-sm">-</button>
+                      <span className="font-display font-bold text-lg">{pendingQty}</span>
+                      <button onClick={() => changeQty(item, 1)} className="w-9 h-9 rounded-full bg-white font-bold shadow-sm">+</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <button
-              onClick={confirmAdd}
-              disabled={!selectedOption}
-              className="w-full bg-brand-red text-white font-body font-bold py-3 rounded-xl disabled:opacity-40"
-            >
-              أضف للسلة
-            </button>
-            <button
-              onClick={() => setPickerItem(null)}
-              className="w-full mt-2 text-center font-body text-charcoal/60 py-2"
-            >
-              إلغاء
-            </button>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </main>
   );
 }
