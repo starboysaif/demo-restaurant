@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { addDemoOrder } from "@/lib/demoOrders";
 
 type CartItem = { id: string; name: string; price: number; qty: number };
