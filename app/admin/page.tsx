@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getDemoOrders } from "@/lib/demoOrders";
 
+const categories = ["برجر", "بيتزا", "دجاج", "مشروبات"];
+
 const fakeOrders = [
   { id: "1", name: "أحمد محمود", phone: "01012345678", items: "برجر كلاسيك × 2، بيبسي × 1", total: 190, status: "قيد التحضير", time: "منذ 5 دقائق" },
   { id: "2", name: "سارة علي", phone: "01198765432", items: "بيتزا مارجريتا × 1", total: 95, status: "جديد", time: "منذ دقيقتين" },
@@ -29,9 +31,10 @@ export default function DemoAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [demoOrders, setDemoOrders] = useState<any[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+
   const [newName, setNewName] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [newCategory, setNewCategory] = useState("برجر");
+  const [newCategory, setNewCategory] = useState(categories[0]);
+  const [newOptions, setNewOptions] = useState([{ label: "", price: "" }]);
 
   useEffect(() => {
     setDemoOrders(getDemoOrders());
@@ -42,11 +45,35 @@ export default function DemoAdmin() {
     setEditingId(null);
   }
 
+  function addOptionRow() {
+    setNewOptions([...newOptions, { label: "", price: "" }]);
+  }
+
+  function updateNewOption(index: number, field: "label" | "price", value: string) {
+    const updated = [...newOptions];
+    updated[index][field] = value;
+    setNewOptions(updated);
+  }
+
+  function removeNewOption(index: number) {
+    setNewOptions(newOptions.filter((_, i) => i !== index));
+  }
+
   function addItem() {
-    if (!newName || !newPrice) return;
-    setMenu((prev) => [...prev, { id: "new-" + Date.now(), name: newName, price: Number(newPrice), category: newCategory }]);
+    if (!newName || newOptions.some((o) => !o.price)) {
+      alert("اكتب اسم الصنف وسعر واحد على الأقل");
+      return;
+    }
+    const newEntries = newOptions.map((opt, i) => ({
+      id: "new-" + Date.now() + "-" + i,
+      name: opt.label ? `${newName} (${opt.label})` : newName,
+      price: Number(opt.price),
+      category: newCategory,
+    }));
+    setMenu((prev) => [...prev, ...newEntries]);
     setNewName("");
-    setNewPrice("");
+    setNewCategory(categories[0]);
+    setNewOptions([{ label: "", price: "" }]);
     setShowAddForm(false);
   }
 
@@ -62,8 +89,12 @@ export default function DemoAdmin() {
       }}
     >
       <header className="py-5 px-4 flex items-center gap-3">
-        <Link href="/" className="text-2xl text-brand-red">←</Link>
-        <h1 className="font-display text-xl font-bold text-brand-red">لوحة تحكم Bite House (نموذج)</h1>
+        <Link href="/" className="text-2xl text-brand-red">
+          ←
+        </Link>
+        <h1 className="font-display text-xl font-bold text-brand-red">
+          لوحة تحكم Bite House (نموذج)
+        </h1>
       </header>
 
       <p className="font-body text-xs text-charcoal/50 px-4 mb-4">
@@ -71,8 +102,22 @@ export default function DemoAdmin() {
       </p>
 
       <div className="flex gap-2 px-4 mb-5">
-        <button onClick={() => setTab("orders")} className={`flex-1 py-2 rounded-lg font-body font-bold border ${tab === "orders" ? "bg-brand-orange text-white border-brand-orange" : "border-brand-orange/30 text-charcoal"}`}>الطلبات</button>
-        <button onClick={() => setTab("menu")} className={`flex-1 py-2 rounded-lg font-body font-bold border ${tab === "menu" ? "bg-brand-orange text-white border-brand-orange" : "border-brand-orange/30 text-charcoal"}`}>إدارة المنيو</button>
+        <button
+          onClick={() => setTab("orders")}
+          className={`flex-1 py-2 rounded-lg font-body font-bold border ${
+            tab === "orders" ? "bg-brand-orange text-white border-brand-orange" : "border-brand-orange/30 text-charcoal"
+          }`}
+        >
+          الطلبات
+        </button>
+        <button
+          onClick={() => setTab("menu")}
+          className={`flex-1 py-2 rounded-lg font-body font-bold border ${
+            tab === "menu" ? "bg-brand-orange text-white border-brand-orange" : "border-brand-orange/30 text-charcoal"
+          }`}
+        >
+          إدارة المنيو
+        </button>
       </div>
 
       {tab === "orders" && (
@@ -84,7 +129,11 @@ export default function DemoAdmin() {
                   <p className="font-display font-bold">{order.name}</p>
                   <p className="font-body text-sm text-charcoal/60">{order.phone}</p>
                 </div>
-                <span className={`font-body text-xs px-3 py-1 rounded-full ${order.isDemo ? "bg-brand-red/10 text-brand-red" : "bg-brand-orange/10 text-brand-orange"}`}>
+                <span
+                  className={`font-body text-xs px-3 py-1 rounded-full ${
+                    order.isDemo ? "bg-brand-red/10 text-brand-red" : "bg-brand-orange/10 text-brand-orange"
+                  }`}
+                >
                   {order.isDemo ? "طلبك التجريبي" : order.status}
                 </span>
               </div>
@@ -100,42 +149,105 @@ export default function DemoAdmin() {
 
       {tab === "menu" && (
         <div className="px-4 space-y-3">
-          <button onClick={() => setShowAddForm(!showAddForm)} className="w-full bg-brand-orange text-white font-body font-bold py-3 rounded-lg mb-2">
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="w-full bg-brand-orange text-white font-body font-bold py-3 rounded-lg mb-2"
+          >
             {showAddForm ? "إلغاء" : "+ إضافة صنف جديد"}
           </button>
 
           {showAddForm && (
-            <div className="rounded-2xl bg-white p-4 shadow-[0_2px_10px_rgba(43,24,16,0.08)] border border-brand-orange/10 space-y-2 mb-3">
-              <input type="text" placeholder="اسم الصنف" value={newName} onChange={(e) => setNewName(e.target.value)} className="w-full border border-brand-orange/30 rounded-lg px-3 py-2 font-body text-sm" />
-              <input type="number" placeholder="السعر" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} className="w-full border border-brand-orange/30 rounded-lg px-3 py-2 font-body text-sm" />
-              <button onClick={addItem} className="w-full bg-brand-red text-white font-body font-bold py-2 rounded-lg">حفظ</button>
+            <div className="rounded-2xl bg-white p-4 shadow-[0_2px_10px_rgba(43,24,16,0.08)] border border-brand-orange/10 space-y-3 mb-3">
+              <input
+                type="text"
+                placeholder="اسم الصنف"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full border border-brand-orange/30 rounded-lg px-3 py-2 font-body text-sm"
+              />
+              <select
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                className="w-full border border-brand-orange/30 rounded-lg px-3 py-2 font-body text-sm"
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+
+              <p className="font-body font-bold text-sm">الأسعار / الخيارات</p>
+              {newOptions.map((opt, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="اسم الخيار (فاضي لو سعر واحد بس)"
+                    value={opt.label}
+                    onChange={(e) => updateNewOption(i, "label", e.target.value)}
+                    className="flex-1 border border-brand-orange/30 rounded-lg px-3 py-2 font-body text-sm"
+                  />
+                  <input
+                    type="number"
+                    placeholder="السعر"
+                    value={opt.price}
+                    onChange={(e) => updateNewOption(i, "price", e.target.value)}
+                    className="w-24 border border-brand-orange/30 rounded-lg px-3 py-2 font-body text-sm"
+                  />
+                  {newOptions.length > 1 && (
+                    <button onClick={() => removeNewOption(i)} className="text-red-600 px-2">
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button onClick={addOptionRow} className="text-brand-orange font-body text-sm underline">
+                + إضافة خيار سعر تاني
+              </button>
+
+              <button onClick={addItem} className="w-full bg-brand-red text-white font-body font-bold py-3 rounded-lg mt-2">
+                حفظ الصنف
+              </button>
             </div>
           )}
 
-          {menu.map((item) => (
-            <div key={item.id} className="rounded-2xl bg-white p-4 shadow-[0_2px_10px_rgba(43,24,16,0.08)] border border-brand-orange/10 flex justify-between items-center">
-              <div>
-                <p className="font-body font-bold">{item.name}</p>
-                <p className="font-body text-xs text-charcoal/50">{item.category}</p>
+          {categories.map((cat) => {
+            const catItems = menu.filter((item) => item.category === cat);
+            if (catItems.length === 0) return null;
+            return (
+              <div key={cat} className="mb-4">
+                <h3 className="font-display font-bold text-brand-orange mb-2">{cat}</h3>
+                <div className="space-y-2">
+                  {catItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-2xl bg-white p-4 shadow-[0_2px_10px_rgba(43,24,16,0.08)] border border-brand-orange/10 flex justify-between items-center"
+                    >
+                      <p className="font-body font-bold">{item.name}</p>
+                      {editingId === item.id ? (
+                        <input
+                          type="number"
+                          defaultValue={item.price}
+                          autoFocus
+                          onBlur={(e) => updatePrice(item.id, Number(e.target.value))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") updatePrice(item.id, Number((e.target as HTMLInputElement).value));
+                          }}
+                          className="w-20 border border-brand-orange/30 rounded-lg px-2 py-1 font-body text-sm text-left"
+                        />
+                      ) : (
+                        <button onClick={() => setEditingId(item.id)} className="font-body font-bold text-brand-red underline">
+                          {item.price} ج.م
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              {editingId === item.id ? (
-                <input
-                  type="number"
-                  defaultValue={item.price}
-                  autoFocus
-                  onBlur={(e) => updatePrice(item.id, Number(e.target.value))}
-                  onKeyDown={(e) => { if (e.key === "Enter") updatePrice(item.id, Number((e.target as HTMLInputElement).value)); }}
-                  className="w-20 border border-brand-orange/30 rounded-lg px-2 py-1 font-body text-sm text-left"
-                />
-              ) : (
-                <button onClick={() => setEditingId(item.id)} className="font-body font-bold text-brand-red underline">
-                  {item.price} ج.م
-                </button>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </main>
   );
-}
+              }
