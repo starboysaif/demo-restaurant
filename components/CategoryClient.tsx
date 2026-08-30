@@ -34,6 +34,7 @@ export default function CategoryClient({ category }: { category: string }) {
   const [selectedOption, setSelectedOption] = useState<MenuOption | null>(null);
   const [pendingQty, setPendingQty] = useState(0);
   const timerRef = useRef<any>(null);
+  const pendingRef = useRef<{ item: MenuItem; option: MenuOption; qty: number } | null>(null);
 
   useEffect(() => {
     loadItems();
@@ -75,11 +76,13 @@ export default function CategoryClient({ category }: { category: string }) {
     setLoading(false);
   }
 
-  function commitPending(item: MenuItem) {
-    if (pendingQty > 0 && selectedOption) {
-      const fullName = selectedOption.label ? `${item.name} - ${selectedOption.label}` : item.name;
-      commitToCart(`${item.id}-${selectedOption.label}`, fullName, selectedOption.price, pendingQty);
+  function commitPending() {
+    const p = pendingRef.current;
+    if (p && p.qty > 0) {
+      const fullName = p.option.label ? `${p.item.name} - ${p.option.label}` : p.item.name;
+      commitToCart(`${p.item.id}-${p.option.label}`, fullName, p.option.price, p.qty);
     }
+    pendingRef.current = null;
     setPendingQty(0);
     setSelectedOption(null);
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -87,40 +90,39 @@ export default function CategoryClient({ category }: { category: string }) {
 
   function toggleExpand(item: MenuItem) {
     if (expandedId === item.id) {
-      commitPending(item);
+      commitPending();
       setExpandedId(null);
     } else {
-      if (expandedId) {
-        const prev = items.find((i) => i.id === expandedId);
-        if (prev) commitPending(prev);
-      }
+      if (expandedId) commitPending();
       setExpandedId(item.id);
       setSelectedOption(item.options.length === 1 ? item.options[0] : null);
-      setPendingQty(0);
     }
+  }
+
+  function resetTimer() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => commitPending(), 2500);
   }
 
   function startAdd(item: MenuItem) {
     if (!selectedOption) return;
+    pendingRef.current = { item, option: selectedOption, qty: 1 };
     setPendingQty(1);
-    resetTimer(item);
+    resetTimer();
   }
 
-  function resetTimer(item: MenuItem) {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => commitPending(item), 2500);
-  }
-
-  function changeQty(item: MenuItem, delta: number) {
-    setPendingQty((prev) => {
-      const next = prev + delta;
-      if (next <= 0) {
-        if (timerRef.current) clearTimeout(timerRef.current);
-        return 0;
-      }
-      resetTimer(item);
-      return next;
-    });
+  function changeQty(delta: number) {
+    if (!pendingRef.current) return;
+    const next = pendingRef.current.qty + delta;
+    if (next <= 0) {
+      pendingRef.current = null;
+      setPendingQty(0);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
+    }
+    pendingRef.current.qty = next;
+    setPendingQty(next);
+    resetTimer();
   }
 
   return (
@@ -159,6 +161,11 @@ export default function CategoryClient({ category }: { category: string }) {
                   backgroundPosition: "center",
                 }}
               >
+                <div className="absolute top-3 left-3">
+                  <span className="bg-white/90 text-brand-red font-body font-bold text-xs px-2.5 py-1 rounded-full">
+                    {item.options.length === 1 ? `${item.options[0].price} ج.م` : "اضغط لعرض الأسعار"}
+                  </span>
+                </div>
                 <div className="absolute bottom-0 right-0 left-0 p-3 flex items-center justify-between">
                   <span className="font-display font-bold text-lg text-white drop-shadow">{item.name}</span>
                   <span className="text-white/90 text-xl">{isOpen ? "▲" : "▼"}</span>
@@ -188,10 +195,6 @@ export default function CategoryClient({ category }: { category: string }) {
                     </div>
                   )}
 
-                  {item.options.length === 1 && (
-                    <p className="font-body font-bold text-brand-red mb-3">{item.options[0].price} ج.م</p>
-                  )}
-
                   {pendingQty === 0 ? (
                     <button
                       onClick={() => startAdd(item)}
@@ -202,9 +205,9 @@ export default function CategoryClient({ category }: { category: string }) {
                     </button>
                   ) : (
                     <div className="flex items-center justify-center gap-4 bg-brand-orange/10 rounded-lg py-2">
-                      <button onClick={() => changeQty(item, -1)} className="w-9 h-9 rounded-full bg-white font-bold shadow-sm">-</button>
+                      <button onClick={() => changeQty(-1)} className="w-9 h-9 rounded-full bg-white font-bold shadow-sm">-</button>
                       <span className="font-display font-bold text-lg">{pendingQty}</span>
-                      <button onClick={() => changeQty(item, 1)} className="w-9 h-9 rounded-full bg-white font-bold shadow-sm">+</button>
+                      <button onClick={() => changeQty(1)} className="w-9 h-9 rounded-full bg-white font-bold shadow-sm">+</button>
                     </div>
                   )}
                 </div>
