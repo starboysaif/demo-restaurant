@@ -68,15 +68,22 @@ export default function DemoAdmin() {
   }
 
   function addItem() {
-    const finalCategory = addingNewCategory ? brandNewCategory.trim() : newCategory;
+    let finalCategory = addingNewCategory ? brandNewCategory.trim() : newCategory;
     if (!newName || !finalCategory || newOptions.some((o) => !o.price)) {
       alert("اكتب اسم الصنف والقسم وسعر واحد على الأقل");
       return;
     }
 
     if (addingNewCategory) {
-      addExtraCategory(finalCategory);
-      setCategories((prev) => (prev.includes(finalCategory) ? prev : [...prev, finalCategory]));
+      const existingMatch = categories.find(
+        (c) => c.trim().toLowerCase() === finalCategory.toLowerCase()
+      );
+      if (existingMatch) {
+        finalCategory = existingMatch;
+      } else {
+        addExtraCategory(finalCategory);
+        setCategories((prev) => [...prev, finalCategory]);
+      }
     }
 
     const id = "extra-" + Date.now();
