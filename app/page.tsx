@@ -73,4 +73,39 @@ export default function Home() {
             >
               <img
                 src={category.image}
-                alt={ca
+                alt={category.name}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(180deg, rgba(20,10,5,0) 40%, rgba(20,10,5,0.75) 100%)",
+                }}
+              />
+              <div className="absolute bottom-0 right-0 left-0 p-3 flex items-center justify-between">
+                <span className="font-display font-bold text-lg text-white drop-shadow">
+                  {category.name}
+                </span>
+                <span className="text-white/90 text-xl">←</span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <div className="flex justify-center mt-10">
+        <Link
+          href="/admin"
+          className="border border-brand-orange text-brand-orange rounded-full px-6 py-2.5 font-body text-sm font-bold"
+        >
+          لوحة التحكم (نموذج)
+        </Link>
+      </div>
+
+      <p className="text-center font-body text-xs text-charcoal/30 mt-10">
+        نموذج توضيحي
+      </p>
+    </main>
+  );
+}
