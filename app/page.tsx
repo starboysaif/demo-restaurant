@@ -9,26 +9,33 @@ const categories = [
 
 export default function Home() {
   return (
-    <main
-      className="min-h-screen pb-14"
-      style={{
-        backgroundColor: "#FFF8EE",
-        backgroundImage:
-          "repeating-linear-gradient(135deg, rgba(241,103,31,0.035) 0px, rgba(241,103,31,0.035) 2px, transparent 2px, transparent 22px)",
-      }}
-    >
-      <div className="text-center pt-14 pb-10 px-4">
-        <h1 className="font-display text-6xl font-extrabold text-brand-red mb-3 tracking-tight">
-          Bite House
-        </h1>
-        <p className="font-body text-lg text-charcoal/60">
-          المنيو والطلب اونلاين
-        </p>
+    <main className="min-h-screen bg-[#FFF8EE] pb-14">
+      <div
+        className="relative h-[70vh] min-h-[420px] flex items-end"
+        style={{
+          backgroundImage:
+            "linear-gradient(180deg, rgba(20,10,5,0.15) 0%, rgba(20,10,5,0.85) 100%), url('https://images.unsplash.com/photo-1550547660-d9450f859349?w=1200')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="text-center w-full px-4 pb-10">
+          <h1 className="font-display text-6xl font-extrabold text-white mb-3 tracking-tight drop-shadow-lg">
+            Bite House
+          </h1>
+          <p className="font-body text-lg text-white/85 mb-6">
+            المنيو والطلب اونلاين
+          </p>
+          <a
+            href="#menu"
+            className="inline-block bg-brand-red text-white font-body font-bold px-8 py-3 rounded-full shadow-lg"
+          >
+            اطلب دلوقتي
+          </a>
+        </div>
       </div>
 
-      <div className="mx-6 mb-10 border-t-2 border-dashed border-brand-orange/25" />
-
-      <section className="px-4 grid grid-cols-2 gap-5">
+      <section id="menu" className="px-4 pt-10 grid grid-cols-2 gap-5">
         {categories.map((category) => (
           <Link
             key={category.name}
