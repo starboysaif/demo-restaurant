@@ -32,7 +32,7 @@ export default function CartBar() {
   return (
     <a
       href="/checkout"
-      className="fixed bottom-0 left-0 right-0 bg-brand-red text-white text-center py-4 font-display font-bold text-lg z-50"
+      className="fixed bottom-4 left-4 right-4 bg-brand-red text-white text-center py-4 font-display font-bold text-lg z-50 rounded-2xl shadow-[0_8px_24px_rgba(214,40,40,0.35)]"
     >
       عرض السلة ({count}) - إتمام الطلب
     </a>
