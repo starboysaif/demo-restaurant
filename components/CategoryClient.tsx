@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { getExtraItems } from "@/lib/demoMenu";
 
 type MenuOption = { id: string; label: string; price: number };
 type MenuItem = {
@@ -30,6 +31,7 @@ export default function CategoryClient({ category }: { category: string }) {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [pickerItem, setPickerItem] = useState<MenuItem | null>(null);
+  const [selectedOption, setSelectedOption] = useState<MenuOption | null>(null);
   const [justAdded, setJustAdded] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,16 +60,40 @@ export default function CategoryClient({ category }: { category: string }) {
       options: (optionsData || []).filter((o) => o.menu_item_id === item.id),
     }));
 
-    setItems(merged);
+    const extra = getExtraItems()
+      .filter((e) => e.category === category)
+      .map((e) => ({
+        id: e.id,
+        name: e.name,
+        description: e.description || "",
+        image_url: e.image_url || null,
+        options: e.options.map((o, i) => ({ id: e.id + "-" + i, label: o.label, price: o.price })),
+      }));
+
+    setItems([...merged, ...extra]);
     setLoading(false);
   }
 
-  function handleAdd(item: MenuItem, option: MenuOption) {
-    const fullName = option.label ? `${item.name} - ${option.label}` : item.name;
-    addToCart(`${item.id}-${option.label}`, fullName, option.price);
-    setJustAdded(item.id + option.label);
+  function openPicker(item: MenuItem) {
+    setPickerItem(item);
+    setSelectedOption(item.options.length === 1 ? item.options[0] : null);
+  }
+
+  function confirmAdd() {
+    if (!pickerItem || !selectedOption) return;
+    const fullName = selectedOption.label ? `${pickerItem.name} - ${selectedOption.label}` : pickerItem.name;
+    addToCart(`${pickerItem.id}-${selectedOption.label}`, fullName, selectedOption.price);
+    setJustAdded(pickerItem.id);
     setTimeout(() => setJustAdded(null), 1200);
     setPickerItem(null);
+    setSelectedOption(null);
+  }
+
+  function quickAdd(item: MenuItem) {
+    const option = item.options[0];
+    addToCart(`${item.id}-${option.label}`, item.name, option.price);
+    setJustAdded(item.id);
+    setTimeout(() => setJustAdded(null), 1200);
   }
 
   return (
@@ -87,6 +113,9 @@ export default function CategoryClient({ category }: { category: string }) {
       </header>
 
       {loading && <p className="font-body text-center mt-8">جاري التحميل...</p>}
+      {!loading && items.length === 0 && (
+        <p className="font-body text-center text-charcoal/50 mt-8">لا توجد أصناف في هذا القسم بعد</p>
+      )}
 
       <div className="px-4 mt-2 space-y-4">
         {items.map((item) => (
@@ -95,19 +124,13 @@ export default function CategoryClient({ category }: { category: string }) {
             className="rounded-2xl overflow-hidden flex bg-white shadow-[0_2px_10px_rgba(43,24,16,0.08)] border border-brand-orange/10"
           >
             {item.image_url && (
-              <img
-                src={item.image_url}
-                alt={item.name}
-                className="w-24 h-24 object-cover shrink-0"
-              />
+              <img src={item.image_url} alt={item.name} className="w-24 h-24 object-cover shrink-0" />
             )}
             <div className="p-3 flex-1 flex flex-col justify-between">
               <div>
                 <h3 className="font-display font-bold text-lg">{item.name}</h3>
                 {item.description && (
-                  <p className="font-body text-sm text-charcoal/70 mt-1">
-                    {item.description}
-                  </p>
+                  <p className="font-body text-sm text-charcoal/70 mt-1">{item.description}</p>
                 )}
               </div>
               <div className="flex items-center justify-between mt-2">
@@ -118,14 +141,14 @@ export default function CategoryClient({ category }: { category: string }) {
                 </p>
                 {item.options.length === 1 ? (
                   <button
-                    onClick={() => handleAdd(item, item.options[0])}
+                    onClick={() => quickAdd(item)}
                     className="bg-brand-orange text-white font-body font-bold px-4 py-2 rounded-lg shrink-0"
                   >
-                    {justAdded === item.id + item.options[0].label ? "تمت الإضافة" : "أضف"}
+                    {justAdded === item.id ? "تمت الإضافة" : "أضف"}
                   </button>
                 ) : (
                   <button
-                    onClick={() => setPickerItem(item)}
+                    onClick={() => openPicker(item)}
                     className="bg-brand-orange text-white font-body font-bold px-4 py-2 rounded-lg shrink-0"
                   >
                     اختر
@@ -144,12 +167,16 @@ export default function CategoryClient({ category }: { category: string }) {
         >
           <div className="bg-white w-full rounded-t-2xl p-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="font-display font-bold text-xl mb-4">{pickerItem.name}</h3>
-            <div className="space-y-3">
+            <div className="space-y-3 mb-4">
               {pickerItem.options.map((option) => (
                 <button
                   key={option.id}
-                  onClick={() => handleAdd(pickerItem, option)}
-                  className="w-full flex justify-between items-center border border-brand-orange/30 rounded-lg px-4 py-3"
+                  onClick={() => setSelectedOption(option)}
+                  className={`w-full flex justify-between items-center rounded-lg px-4 py-3 border-2 ${
+                    selectedOption?.id === option.id
+                      ? "border-brand-red bg-brand-red/5"
+                      : "border-brand-orange/20"
+                  }`}
                 >
                   <span className="font-body font-bold">{option.label}</span>
                   <span className="font-body font-bold text-brand-red">{option.price} ج.م</span>
@@ -157,8 +184,15 @@ export default function CategoryClient({ category }: { category: string }) {
               ))}
             </div>
             <button
+              onClick={confirmAdd}
+              disabled={!selectedOption}
+              className="w-full bg-brand-red text-white font-body font-bold py-3 rounded-xl disabled:opacity-40"
+            >
+              أضف للسلة
+            </button>
+            <button
               onClick={() => setPickerItem(null)}
-              className="w-full mt-4 text-center font-body text-charcoal/60 py-2"
+              className="w-full mt-2 text-center font-body text-charcoal/60 py-2"
             >
               إلغاء
             </button>
@@ -167,4 +201,4 @@ export default function CategoryClient({ category }: { category: string }) {
       )}
     </main>
   );
-  }
+}
