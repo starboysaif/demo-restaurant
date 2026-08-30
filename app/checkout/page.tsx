@@ -76,9 +76,9 @@ export default function Checkout() {
         <p className="font-body text-xs text-charcoal/40 mb-6">
           (ده نموذج توضيحي — الطلب هيظهر في لوحة التحكم وهيختفي لو عملت ريفريش)
         </p>
-        <a href="/admin" className="bg-brand-red text-white font-body font-bold px-6 py-3 rounded-lg mb-3">
+        <Link href="/admin" className="bg-brand-red text-white font-body font-bold px-6 py-3 rounded-lg mb-3">
           شوف الطلب في لوحة التحكم
-        </a>
+        </Link>
         <a href="/" className="text-charcoal/60 font-body underline">
           رجوع للمنيو
         </a>
