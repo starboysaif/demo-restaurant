@@ -104,6 +104,17 @@ export default function Home() {
       </div>
 
       <p className="text-center font-body text-xs text-charcoal/30 mt-10">نموذج توضيحي</p>
+      <p className="text-center font-body text-xs text-charcoal/40 mt-2">
+        Designed by{" "}
+        <a
+          href="https://www.instagram.com/monowebs?igsi=Nm8zZ2d5MGdqZWc="
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-brand-red font-bold underline"
+        >
+          Mono Webs
+        </a>
+      </p>
     </main>
   );
 }
