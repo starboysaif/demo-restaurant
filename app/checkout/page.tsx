@@ -50,7 +50,10 @@ export default function Checkout() {
       id: "demo-" + Date.now(),
       name,
       phone,
+      address: orderType === "pickup" ? "استلام من الفرع" : address,
+      orderType,
       items: cart.map((i) => `${i.name} × ${i.qty}`).join("، "),
+      itemsList: cart,
       total,
       status: "جديد",
       time: "الآن",
@@ -89,7 +92,7 @@ export default function Checkout() {
 
   return (
     <main
-      className="min-h-screen px-4 py-8 pb-32"
+      className="min-h-screen px-4 py-8 pb-28"
       style={{
         backgroundColor: "#FFF8EE",
         backgroundImage:
@@ -140,9 +143,12 @@ export default function Checkout() {
         {error && <p className="font-body text-red-600 text-sm">{error}</p>}
       </div>
 
-      <button onClick={submitOrder} className="fixed bottom-0 left-0 right-0 bg-brand-red text-white text-center py-4 font-display font-bold text-lg">
+      <button
+        onClick={submitOrder}
+        className="fixed bottom-4 left-4 right-4 bg-brand-red text-white text-center py-4 font-display font-bold text-lg rounded-2xl shadow-[0_8px_24px_rgba(214,40,40,0.35)]"
+      >
         تأكيد الطلب
       </button>
     </main>
   );
-}
+      }
